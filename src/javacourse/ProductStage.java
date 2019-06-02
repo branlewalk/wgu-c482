@@ -13,6 +13,8 @@ import javafx.stage.Stage;
 
 class ProductStage {
 
+    private ObservableList<Part> associatedPartList = FXCollections.observableArrayList();
+
     void display(String type, Product product, Inventory inventory) {
         Stage productStage = new Stage();
         productStage.initModality(Modality.APPLICATION_MODAL);
@@ -21,7 +23,6 @@ class ProductStage {
         // Buttons
         Button saveButton = new Button("Save");
         saveButton.setAlignment(Pos.CENTER_LEFT);
-        saveButton.setOnAction(event -> productStage.close());
         Button cancelButton = new Button("Cancel");
         cancelButton.setAlignment(Pos.CENTER_RIGHT);
         cancelButton.setOnAction(event -> productStage.close());
@@ -53,52 +54,96 @@ class ProductStage {
         minField.setPromptText("Min");
         TextField searchPartField = new TextField();
         searchPartField.setPromptText("Search Part");
-
-
-
+        
         // Search Parts Table
-        ObservableList searchPartList = FXCollections.observableArrayList();
+        ObservableList<Part> searchPartList = FXCollections.observableArrayList();
         TableView<Part> searchPartTableView = new TableView<>(searchPartList);
-        TableColumn<Part, String> id1 = new TableColumn<>("Part ID");
-        id1.setCellValueFactory(new PropertyValueFactory<>("id"));
-        searchPartTableView.getColumns().add(id1);
-        TableColumn<Part, String> name1 = new TableColumn<>("Part Name");
-        name1.setCellValueFactory(new PropertyValueFactory<>("name"));
-        searchPartTableView.getColumns().add(name1);
-        TableColumn<Part, String> stock1 = new TableColumn<>("Inventory Level");
-        stock1.setCellValueFactory(new PropertyValueFactory<>("stock"));
-        searchPartTableView.getColumns().add(stock1);
-        TableColumn<Part, String> price1 = new TableColumn<>("Price/Cost per Unit");
-        price1.setCellValueFactory(new PropertyValueFactory<>("price"));
-        searchPartTableView.getColumns().add(price1);
+        TableColumn<Part, String> searchPartID = new TableColumn<>("Part ID");
+        searchPartID.setCellValueFactory(new PropertyValueFactory<>("id"));
+        searchPartTableView.getColumns().add(searchPartID);
+        TableColumn<Part, String> searchPartName = new TableColumn<>("Part Name");
+        searchPartName.setCellValueFactory(new PropertyValueFactory<>("name"));
+        searchPartTableView.getColumns().add(searchPartName);
+        TableColumn<Part, String> searchPartStock = new TableColumn<>("Inventory Level");
+        searchPartStock.setCellValueFactory(new PropertyValueFactory<>("stock"));
+        searchPartTableView.getColumns().add(searchPartStock);
+        TableColumn<Part, String> searchPartPrice = new TableColumn<>("Price/Cost per Unit");
+        searchPartPrice.setCellValueFactory(new PropertyValueFactory<>("price"));
+        searchPartTableView.getColumns().add(searchPartPrice);
         searchPartTableView.setPrefWidth(450);
         searchPartTableView.setPrefHeight(300);
 
-//        // Search Button
-//        searchPartButton.setOnAction(event -> searchPartList = inventory.lookupProduct(searchPartField.getText()));
-//
-//        // Add Button
-//        addPartButton.setOnAction(event -> {
-//
-//        });
+        // Populate fields of existing Product
+        if (type.equals("Modify")) {
+            idField.setText(Integer.toString(product.getId()));
+            nameField.setText(product.getName());
+            invField.setText(Integer.toString(product.getStock()));
+            priceField.setText(Double.toString(product.getPrice()));
+            maxField.setText(Integer.toString(product.getMax()));
+            minField.setText(Integer.toString(product.getMin()));
+            associatedPartList = product.getAllAssociatedParts();
+        }
 
-
-        ObservableList associatedPartList = FXCollections.observableArrayList();
+        // Associated Parts table for Product
         TableView<Part> partTableView = new TableView<>(associatedPartList);
-        TableColumn<Part, String> id = new TableColumn<>("Part ID");
-        id.setCellValueFactory(new PropertyValueFactory<>("id"));
-        partTableView.getColumns().add(id);
-        TableColumn<Part, String> name = new TableColumn<>("Part Name");
-        name.setCellValueFactory(new PropertyValueFactory<>("name"));
-        partTableView.getColumns().add(name);
-        TableColumn<Part, String> stock = new TableColumn<>("Inventory Level");
-        stock.setCellValueFactory(new PropertyValueFactory<>("stock"));
-        partTableView.getColumns().add(stock);
-        TableColumn<Part, String> price = new TableColumn<>("Price/Cost per Unit");
-        price.setCellValueFactory(new PropertyValueFactory<>("price"));
-        partTableView.getColumns().add(price);
+        TableColumn<Part, String> partID = new TableColumn<>("Part ID");
+        partID.setCellValueFactory(new PropertyValueFactory<>("id"));
+        partTableView.getColumns().add(partID);
+        TableColumn<Part, String> partName = new TableColumn<>("Part Name");
+        partName.setCellValueFactory(new PropertyValueFactory<>("name"));
+        partTableView.getColumns().add(partName);
+        TableColumn<Part, String> partStock = new TableColumn<>("Inventory Level");
+        partStock.setCellValueFactory(new PropertyValueFactory<>("stock"));
+        partTableView.getColumns().add(partStock);
+        TableColumn<Part, String> partPrice = new TableColumn<>("Price/Cost per Unit");
+        partPrice.setCellValueFactory(new PropertyValueFactory<>("price"));
+        partTableView.getColumns().add(partPrice);
         partTableView.setPrefWidth(450);
         partTableView.setPrefHeight(300);
+
+
+        // Search Button
+        searchPartButton.setOnAction(event -> {
+            searchPartList.clear();
+            searchPartList.addAll(inventory.lookupPart(searchPartField.getText()));
+        });
+
+        // Add Button
+        addPartButton.setOnAction(event -> associatedPartList.add(searchPartTableView.getSelectionModel().getSelectedItem()));
+
+        // Delete Button
+        deletePartButton.setOnAction(event -> associatedPartList.remove(partTableView.getSelectionModel().getSelectedItem()));
+
+        // Save Button
+        saveButton.setOnAction(event -> {
+            int id;
+            if (type.equals("Modify")) {
+                id = Integer.parseInt(idField.getText());
+            } else {
+                id = inventory.IDGenerator("Product");
+            }
+            String name = nameField.getText();
+            int inv = Integer.parseInt(invField.getText());
+            double price = Double.parseDouble(priceField.getText());
+            int min = Integer.parseInt(minField.getText());
+            int max = Integer.parseInt(maxField.getText());
+
+            if (type.equals("Add")) {
+                Product newProduct = new Product(id, name, price, inv, min, max);
+                for (int i = 0; i < associatedPartList.size(); i++) {
+                    newProduct.addAssociatedPart(associatedPartList.get(i));
+                }
+                inventory.addProduct(newProduct);
+            } else if(type.equals("Modify")) {
+                int index = inventory.getAllParts().indexOf(product);
+                for (int i = 0; i < associatedPartList.size(); i++) {
+                    product.addAssociatedPart(associatedPartList.get(i));
+                }
+                inventory.updateProduct(index, product);
+            }
+            productStage.close();
+        });
+
 
         // Grid Layout for Label, Text Fields, Tables and Buttons
         GridPane productGrid = new GridPane();

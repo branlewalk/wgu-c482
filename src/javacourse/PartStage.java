@@ -109,7 +109,6 @@ class PartStage {
                     inventory.updatePart(index, new Outsourced(id, name, price, inv, min, max, companyName));
                 }
             }
-
             partStage.close();
         });
 
