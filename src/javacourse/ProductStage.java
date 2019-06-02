@@ -54,7 +54,7 @@ class ProductStage {
         minField.setPromptText("Min");
         TextField searchPartField = new TextField();
         searchPartField.setPromptText("Search Part");
-        
+
         // Search Parts Table
         ObservableList<Part> searchPartList = FXCollections.observableArrayList();
         TableView<Part> searchPartTableView = new TableView<>(searchPartList);
